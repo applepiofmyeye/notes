@@ -1,0 +1,5 @@
+# glossary
+
+- affinity?
+- kernel
+- 
