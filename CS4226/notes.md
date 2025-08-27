@@ -16,6 +16,12 @@
   - [queueing model](#queueing-model)
     - [single server queueing model](#single-server-queueing-model)
     - [little's law](#littles-law)
+- [L2 Network Queueing Models](#l2-network-queueing-models)
+  - [review of last week -- some questions](#review-of-last-week----some-questions)
+  - [Packet flow Model: Arrival Pattern](#packet-flow-model-arrival-pattern)
+    - [exponential distribution](#exponential-distribution)
+    - [poisson process](#poisson-process)
+  - [Service Time](#service-time)
 
 # admin
 Richard Ma - Prof
@@ -178,4 +184,158 @@ formally it is L = ƛW where ƛ is r, W is t
 > to think about:
 >
 > A server with infinite queue and a capacity of 1.5Mb/s, can we predict / guess the queueing delay
+
+# L2 Network Queueing Models
+
+## review of last week -- some questions
+- What is the origin of queueing delay
+  - alot of the performance degregation comes from queueing delay
+- What is the origin of queueing delay
+  - infront of output ports there will naturally be a queue for packets
+- Little's law
+
+- Single server queueing model
+  - we have a queue which can accommodate some customers. (much like a cashier at the start of the queue, just that the end of the queue is the link)
+  - If the avg queue length is 5 packets, on average 100 packets arrive per second, what is the avg queueing delay for packet
+    - L = 5
+    - r = 100
+    - t = L/r = 1/20
+> What about link capacity (bandwidth)? doesnt it affect queueing delay too?
+
+## Packet flow Model: Arrival Pattern
+
+- Track arrival times? -> ti
+  - can be very tedious to track, cannot really tell a pattern
+- What about inter-arrival times (intervals between each ti) -> Ti
+  - drawback: Ti alone doesnt allow us to derive arrival times
+  ![](./Screenshot%202025-08-25%20at%206.31.19 PM.png)
+  - solution: knowing t1 will let us derive t2, t3 based on T1, T2
+  ![](./Screenshot%202025-08-25%20at%206.32.10 PM.png)
+
+- Model the inter-arrival times Tis by independent and identically distributed (i.i.d.) random variable (r.v.) T
+  - each Ti is independent (P and Stats)
+  - identically distributed:
+    - each Ti follows the same distribution 
+    - for modelling
+  - each Ti is a random variable
+
+- ti-s are like bus arrivals and departure times (assuming 0 time to board / alight)
+  - finding the time between each arrival is Ti
+
+> Consider a random experiment whose outcome cannot be determined in advance
+> - Sample space S: the set of all outcomes (head / tail)
+> - Event E: a subset of the sample space
+>   - an event is occurred if the outcome s is in E
+> - Probability function P(E)
+>   - [0, 1]
+>   - P(S) = 1 (probability of the entire sample space -- by normalising the probability)
+>   - P(E1 and E2) = P(E1) + P(E2) where E1 and E2 are mutex
+>   ![](Screenshot%202025-08-25%20at%206.46.46 PM.png)
+
+***What is a random variable***
+- A random variable X is a function that assigns a real value to each outcome s ∊ S
+  - this is a function -- a mapping (u give me something, i map to something else) domain and range
+  - there's nothing random about a random variable once the mapping is defined
+- eg. gambling
+  - throw a coin, if it's a head, i win $1, if it's a tail i lose $1
+  - this game is a random variable
+
+- whats the P(X in set A) = something?
+  - probability is defined on events, how do we see probability on a mapping?
+  - P(X in set A)
+  - ![](./Screenshot%202025-08-25%20at%206.55.01 PM.png)
+  - the inverse mapping: X^-1(A)
+    - which samples will map to the values in A
+      - to get a subset, which will become an event which can be a measured probability
+
+- the **distribution function** F or cdf (cumulative distribution function), of the r.v. X is defined on any real number x by 
+  - whats the P(X ≤ x) 
+![](./Screenshot%202025-08-25%20at%206.56.48 PM.png)
+
+- A r.v. is continuous if there exists a probability density function f(x) such that 
+  ![](./Screenshot%202025-08-25%20at%206.58.25 PM.png)
+
+***Independence***
+
+- Two r.v. are independent if the realisation of one does not affect the probability distribution of the other
+  - f(x, y) = fX(x) * fY(x)
+- expectation or mean of a random variable X
+  - discrete: ![](./Screenshot%202025-08-25%20at%207.00.02 PM.png)
+  - continuous: ![](./Screenshot%202025-08-25%20at%207.00.19 PM.png)
+
+***Back to the arrival pattern***
+- we only need to focus on the distirbution of the inter-arrival time Ti
+- might be difficult because there are many different distributions
+- a continuous r.v. T follows / has an exponential distribution with param ƛ > 0, if, for x ≥ 0
+  ![](./Screenshot%202025-08-25%20at%207.02.22 PM.png)
+
+### exponential distribution
+- a continuous r.v. T follows/has an exponential distribution with parameter lambda > 0, if, for x ≥ 0
+  ![](./Screenshot%202025-08-26%20at%2012.12.21 PM.png)
+
+![](./Screenshot%202025-08-26%20at%2012.12.39 PM.png)
+- What is the unit and physical meaning of lambda?
+- T => inter-arrival time.
+  - E[T] = mean of inter-arrival time
+  - 1/lambda = reverse of the mean of the inter-arrival time? --> frequency / rate at which a packet comes
+    - Arrival Rate
+    - Measures how fast packet comes in
+  - > mean of inter-arrival time is arrival rate 
+- Why is exponential a good distribution?
+
+**Properties**
+- Memoryless property: P{T > s + t | T > s} = P{T > t}
+  - Reads: if T follows an exponential dist, given any t, this above will hold. (what is s?)
+
+![](./Screenshot%202025-08-26%20at%2012.55.47 PM.png)
+
+- prior history will not affect waiting time towards the future
+
+![](./Screenshot%202025-08-26%20at%2012.58.21 PM.png)
+
+- the blue curve is very exponential, the inter-arrival times are all smaller at the start
+
+### poisson process
+
+- what is process? 
+  - something that goes along the time
+  - the whole thing is random, probabilistic, 
+- what is poisson?
+  - links with poisson distribution (but we will not touch in this course)
+  - i give a period of time (1 hours), how many packets will arrive, thats the poisson process?
+
+- each inter-arrival time is the same exponential
+  - exponentially distributed as T with rate lambda
+  - this arrival pattern is called a poisson process
+- why is poisson a good model?
+  - starting time doesn't matter (memoryless property)
+    - the t1 doesnt matter
+      - can look at from any point and look forward
+
+**- merging property:**
+- imagine we have 2 traffic flows: tcp and udp
+  - each have different arrival rates. if we model both as poisson, (assuming expo. dist.), we can merge both, the combined traffic is also exponential
+
+
+![](./L2-poisson%20merging.png)
+
+> this will be seen in tutorials!
+
+## Service Time
+
+- we've modeled the arrival time, now what about the service time?
+  - some packets might be bigger or smaller, whats the implication? -- might take different amount of time to process
+    - the same packet given different link capacity / rate
+    - packets with different lengths under a fixed link
+- packet size will affect transmission time.
+- service time can be different depending on which link, depending on size of packets: L/r = transmission time
+
+- service time Si -- processing time of packet i under a **fixed** link rate
+- service time will be random, but we assume it follows the same distribution
+- ave S = E[S] = 1/µ
+
+- service time: in terms of 3103: it is the transmission delay -- the time needed to put the packet on the link
+  - they mean the same thing here
+- what is the physical meaning of µ in this: *E[S] = 1/µ*
+  - Rate of leaving / transmission == packets per unit time LEAVING the queue
 
