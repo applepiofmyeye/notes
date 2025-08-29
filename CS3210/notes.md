@@ -14,6 +14,40 @@
   - [number of threads / cores](#number-of-threads--cores)
   - [synchronisation](#synchronisation)
   - [shared resources](#shared-resources)
+- [L3: hardware parallelism](#l3-hardware-parallelism)
+  - [computer architecture](#computer-architecture)
+  - [types of parallelism](#types-of-parallelism)
+    - [bit level parallelism](#bit-level-parallelism)
+    - [instruction level parallelism](#instruction-level-parallelism)
+      - [pipelining](#pipelining)
+      - [superscalar](#superscalar)
+      - [SIMD](#simd)
+    - [thread level parallelism](#thread-level-parallelism)
+      - [SMT -- simultaneous multi threading](#smt----simultaneous-multi-threading)
+    - [processor level parallelism (multiprocessing)](#processor-level-parallelism-multiprocessing)
+  - [Flynn's Taxonomy](#flynns-taxonomy)
+    - [instruction stream](#instruction-stream)
+    - [Single Instruction Single Data](#single-instruction-single-data)
+    - [SIMD Single instr. Multiple Data](#simd-single-instr-multiple-data)
+      - [AVX](#avx)
+    - [MISD Multiple Instruction Single Data](#misd-multiple-instruction-single-data)
+    - [MIMS multi instr. multi. data](#mims-multi-instr-multi-data)
+    - [Variant -- SIMD + MIMD](#variant----simd--mimd)
+  - [Multicore Architecture](#multicore-architecture)
+    - [hierarchical design](#hierarchical-design)
+    - [pipelined design](#pipelined-design)
+    - [network based design](#network-based-design)
+    - [Future trends](#future-trends)
+  - [memory organisation](#memory-organisation)
+    - [execution on a processor](#execution-on-a-processor)
+  - [types of // computers](#types-of--computers)
+    - [distributed memory systems](#distributed-memory-systems)
+    - [shared memory system](#shared-memory-system)
+      - [cache coherence](#cache-coherence)
+      - [memory contention](#memory-contention)
+        - [Uniform Memory Access (UMA)](#uniform-memory-access-uma)
+        - [Non uniform memory ccess](#non-uniform-memory-ccess)
+      - [summary](#summary)
 
 # L2 Processes, threads and synchronisation
 
@@ -291,3 +325,333 @@ factors:
     - 2 concurrent threads are accessing a shared variable + that variable is read / modified / written by those threads, then access to the variable must be controlled to avoid erroneous behaviour
   - mechanisms to control access to shared resources
   - patterns for coordinating accesses to shared resources
+
+
+# L3: hardware parallelism
+
+## computer architecture
+- concerns on // execution
+- challenges of accessing memory
+- understand and optimise performance
+- gain intuition about what workloads are good for fast // machines
+
+> is there any parallelism on a single core processor?
+> ans: i think yes, multiple threads can execute at the same time on the same core
+
+## types of parallelism
+- bit level (single core)
+- instruction level (single core)
+- processor level (multi core)
+
+### bit level parallelism
+- by increasing the processor word size (64-bit architecture)
+  - unit of transfer (data) between processor -> memory
+  - apply the same instruction to multiple bits at the same time = bit level parallelism
+- procesor work with words of diff sizes
+  - multiple bits of the same word at the same time
+
+![alt text](<Screenshot 2025-08-29 at 2.43.45 PM.png>)
+
+- if we add 64-bit long integers, using a 32-bit archi, need 2 parallel add operations
+
+### instruction level parallelism
+- execute in //
+  - pipelining
+  - superscalar
+
+#### pipelining
+    - // across time
+    - split instruction execution in multiple stages
+      - instruction fetch, decode etc.
+    - allow multiple istructions to occupy different stages in the same clock cycle
+      - provided no data / control dependenccies
+    - number of pipeline stages == max achievable speedup
+  ![pipelining for instr. level //](<Screenshot 2025-08-29 at 2.47.13 PM.png>)
+
+disadvantages
+- cannot have dependencies
+  - need to be independent instructions
+    - hence might have a lot of hazards in the pipeline
+- bubbles
+  - delays of feeding the instr. into the pipeline
+- hazards
+- challenging to maximise the use of pipelining (finding independent instructions)
+
+speculation
+- try to figure out which branch of a decision instruction will be taken
+  - when we have an if statement, guess whether if or else will be taken
+  - try to feed into the pipeline as early as possible
+    - but if the speculation is wrong, the pipeline has to be flushed, new instructions have to be fed into the pipeline
+    - can lead to more bubbles 
+
+out of order execution
+- run one instr before something etc.
+
+> cannot increase the efficiency already
+
+![pipeline processor](<Screenshot 2025-08-29 at 2.55.46 PM.png>)
+
+#### superscalar
+- duplicate the pipeline
+  - n instructions can run at the same stage in the pipeline at the same time
+  - how? -- in the hardware they duplicate
+- more instructions per cycle -> fewer cycles per instruction 
+
+
+![superscalar processor](<Screenshot 2025-08-29 at 2.56.07 PM.png>)
+
+- instructions come from the same execution flow (only one thread/process) has to execute and feed instructions into the pipeline.
+  - only 1 execution context
+  - if no instruction is fed into the pipeline, the OS has to find another control flow with instructions to execute and context switch: bring the instructions into the core, to execute another process
+
+- 1 execution context = only at most 1 thread / process leaves / runs on the core
+
+
+> how to increase the execution context?
+> not enough ILP, but math operations are long
+> cannot find enough instructions to run in //, but might be abit slow to bring abit of data to tthe execution processor
+
+#### SIMD
+- single instr. multiple data
+- add more ALUs to increase compute capability
+- more execution units -- speed up execution of instructions
+- 8 units of data at the same time
+  - less effort to bring data from the Fetch / decode step => ALUs,
+  - as compared to fetching from memory
+- same instruction is broadcasted to and uxecuted by all ALUs
+
+> but if the data that we need is different, all 8 ALUs run different instructions and need to fetch data 
+> can run in // as long as they are using the same data (no need to refetch data)
+
+
+*Hence, designers thought: maybe allow multiple control flows executing on the core at the same time*
+
+### thread level parallelism
+
+#### SMT -- simultaneous multi threading
+
+- multiple execution contexts maintained on the same core
+  - means: can have instr. from multiple control flows that are immediately avail without a context switch for execution on that core
+
+> in superscalar, in case need to execute from another control flow, the OS needs to context switch
+>   - clear, flush all the context from the previous context, bring in a new context and run
+
+- now: 2 context doesnt need to switch, can have 2 execution contexts
+- 1 unit for each stage of the pipeline (fetch, decode, alu)
+  - but now we can pass in 2 sets of instructions to fetch / decode, ALU, etc
+  - can share these units
+
+- each core can execute 2 threads at the same time
+  - a number of logical cores (2) for each physical core
+
+> existing architectures: superscalar pipeline + SMT
+
+### processor level parallelism (multiprocessing)
+- can do whatever thread, instruction, bit level parallelism in 2 cores
+
+- in the end (after all the thread level etc. parallelism), they still will use the same single hardware core
+  - if there are more threads, very difficult if it's complex to work on one core
+
+- more cores = more data from memory
+  - memory cannot keep up with the demand (cores compete to get data from memory) -- contention
+
+- physical limits of what you can achieve in a chip
+
+
+## Flynn's Taxonomy
+
+- a taxonomy that is used to categorise diff. kind of architectures based on the instructions and the data streams that they use
+  - proposed in 1972
+- as new architectures appeared over time,
+  - people tried to feed those architectures into the Flynn's taxonomy
+- but now there's a mix of different kinds
+
+### instruction stream
+- a single executin flow
+- ie a single Program Counter (PC)
+
+### Single Instruction Single Data
+SISD
+- single inst. is executed one after another
+- uniprocessor without any pipeline
+
+### SIMD Single instr. Multiple Data 
+- multiple data being processed
+- Processing units are working on multiple streams of data
+- data parallelism: multiple data processed at the same time, but with same instructions
+
+nowadays:
+- SISM exists in our cores (data // architectures)
+- AVX instructions
+- GPGPUs -- used to be more SIMD in the past
+  - but the complexity of the processing unit increased a lot 
+- can execute more than simd nowadays
+
+- same instruction (from one program flow) executing on a bunch of execution units (ALUs)
+
+#### AVX
+- applying the same instruction n times (eg. 4 words added at the same time) -- one operation, one instruction, multiple execution 
+
+- can guide compiler to use avx instructions in compiled code
+- avx instr. work on very large words to execute 1 instruction for multiple words at the same time
+
+- 4 operations -> 1 instructions (multiple data)
+
+### MISD Multiple Instruction Single Data
+- 1 data stream used at the same time to execute different instructions at the instruction code
+- no actual implementation
+
+### MIMS multi instr. multi. data
+- each PU fecthes its own instruction
+- each PU operates on its data
+  - multiple threads, processes executed at the same time 
+
+### Variant -- SIMD + MIMD
+- multiple streaming multiprocessors (nVidia GPUs)
+  - each SM is in a SIMD fashion
+  - a set of threads executing the same code (effectively SIMD)
+
+## Multicore Architecture
+- how to design the architecture of the chip, to put in a number of cores, memory
+  - what type of designs do you see 
+    - hierarchical design
+
+### hierarchical design
+- multiple cores share multiple caches
+- cache size increases from the leaves to the root
+
+![hierarchical design of caches](<Screenshot 2025-08-29 at 4.20.09 PM.png>)
+
+crossbar: like a bus
+hyper-transport unit
+
+note: each core has about 3 levels of caches
+- lvl 1 is per core
+- other caches are shared with each core
+
+L1 -- cache
+L1i -- intruction cache
+L1d -- data cache
+
+L2
+L3
+
+![alt text](<Screenshot 2025-08-29 at 4.27.41 PM.png>)
+
+- b: bigger cores
+  - have smt
+- s: small cores
+  - not smt
+
+- smaller cores: for processors that are not time sensitive
+- bigger cores: alot of computation
+  - eg. game rendering
+
+![how many cores?](<Screenshot 2025-08-29 at 4.30.38 PM.png>)
+
+- 10 on each side, total 20
+
+- on the chip there are 2 diff sockets, cores are groups together in the socket
+- usually all the cores grouped in 1 socket
+  - but if many cores, the cores are grouped together in sockets
+
+### pipelined design
+- data elements are processed by multiple execution cores in a pipelined way
+  - use the same cache memory,
+  - data is change dby diff cores in diff way
+    - in routers / switch: the packet going through router / switch has to be handled depending on the header of the packet. 
+    - first core will remove the first header, second core will remove another header, process the packet etc... 
+    - every single stage will do some processing on that packet
+    - the cores are all doing one specific action is very common in graphic processes
+- useful if same computation steps have to be applied to a long sequence of data elements
+
+### network based design
+- cores and local caches and memories are connected via an inrerconnection network
+
+### Future trends
+- efficient on-chip interconnection
+  - enough bandwidth for data trf between cores
+  - scaling
+  - robust to tolerate failures
+
+## memory organisation
+- processors run efficiently when data is resident in caches
+  - bring the data as close as possible to the processing unit
+  - people added more and more levels over time -- more caches are faster available to the execution unit
+- PU needs to process instructions and data which it gets from cache (L1, then if dh then L2 then if dh then in L3)
+- cache reduces trips to the memory
+  - getting data from m emory is slow
+  - memory is slow (it's like a s3 ice glacier vibes)
+- avoid gg to memory at all costs
+- if a data is stored in L1 cache, does it exist in L2 and L3 too?
+  - depends on architecture, sometimes yes sometimes now
+
+- memory latency
+- memory bandwidth
+
+### execution on a processor
+
+![execution of addition operations](<Screenshot 2025-08-29 at 4.48.05 PM.png>)
+- assume 8 clocks to transfer data (one add operation = one clock) + up to 3 outstanding load requests
+
+- the 4th add operation needs more time to put the load on the bus: up to 3 outstanding load requests, 4th op need to wait for memory to become available. load instruction cannot be issued to memory.
+- as more and more requests (more cores) compete for memory bus
+- memory bandwidth and memory latency compared to cpu is much slower
+  - organise computation to fetch data from memory less often
+    - reuse data previously loaded by the same thread
+    - share data across threads
+    - cheaper to compute then to fetch data from memory
+
+## types of // computers
+![types of parallel computers](<Screenshot 2025-08-29 at 4.52.54 PM.png>)
+
+### distributed memory systems
+
+![alt text](<Screenshot 2025-08-29 at 4.52.54 PM.png>)
+- each node is an independent unit
+  - with processor, memory and, sometimes, peripheral elements
+- physically distributed memory module
+  - memory in a node is private
+
+### shared memory system
+- multiple PUs that share memory 
+  - 1 memory or multiple pieces of memory (that appear to be 1)
+  - accessed through a shared memory provider
+- any of the PU can access the. memory through the load store operater
+- some PUs may be faster for accessing memory
+- program is unaware of the actual hardware memory architecture
+
+#### cache coherence
+
+![alt text](<Screenshot 2025-08-29 at 4.57.53 PM.png>)
+
+- multiple copies of the same data exist on different caches
+  - might not all have the same data, but if two caches save the same data, the 2 data caches will sync
+    - how? -- a protocol -- cache coherence protocol -- ensures that the mutation of a data in one PU will be reflected across all caches
+      - naively: PU updating the data will write to memory, PU using the new data will read from memory -- 2 memory calls = high latency (modern day cache coherence is v efficient)
+    - avoid sharing lines of caches across PUs
+- local update by processing unit -> other PUs should not see the unchanged data
+
+#### memory contention
+##### Uniform Memory Access (UMA)
+- uniform access time to access main memory (same for every processor)
+- suitable for small numbe rof processing unity -- due to contention -- fight for memory
+
+
+##### Non uniform memory ccess
+![alt text](<Screenshot 2025-08-29 at 5.05.05 PM.png>)
+- physically distr. memory of all processing units are combined to form a global shared-memory address space: -- also called distributed shared memory
+- accessing local memory is faster than remote memory for a processor
+  - non uniform access time
+
+if the memory is in another socket: higher latency 
+- reduces contention
+- using the same line of cache for data -- cache coherence
+
+#### summary
+adv:
+- no. need to partition code or data
+- no need to physically mode data among processors -- communication is eddicient
+disdv: 
+- special sync constructs are required
+- lack of scalability fue to contention

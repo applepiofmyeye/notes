@@ -24,6 +24,14 @@
   - [Service Time](#service-time)
 - [L3](#l3)
     - [recap](#recap)
+  - [Effective bandwidth](#effective-bandwidth)
+  - [statistical multiplexing vs tdm](#statistical-multiplexing-vs-tdm)
+  - [various queueing models](#various-queueing-models)
+  - [burke's theorem](#burkes-theorem)
+  - [tandem queues](#tandem-queues)
+  - [acyclic network with probabilistic routing](#acyclic-network-with-probabilistic-routing)
+  - [jackson network](#jackson-network)
+    - [solving jackson network](#solving-jackson-network)
 
 # admin
 Richard Ma - Prof
@@ -369,5 +377,74 @@ formally it is L = ƛW where ƛ is r, W is t
   - maybe yes, for processing time of certain services
 
 - what is the relationship between queueing delay and throughput?
-  - positively correlated? based on the monotonic graph ??
+  - positively correlated? based on the monotonic graph ?? -- look at the slides w E[L] against rho and E[W] against rho
 
+
+## Effective bandwidth
+- the physical link capacity
+  - upper limit of how much they can transmit (eg. 10Mbps cable)
+- effective bandwidth of a link
+  - the actual throughput that can be achieved
+  - also depends on the quality of service achieved
+
+- they dont want to under use the link, but dont want to use until above a certain upper bound (the max bandwidth we can accommodate)
+
+## statistical multiplexing vs tdm
+- statistical: walk in restaurants
+  - throughput is µ
+- tdm: reservations only
+  - throughput is µ / 2
+
+which is better?
+  - allocate each poisson stream its own queue with a reduced arrival and service time (lower lambda, lower miu) 
+  - or a single queue (lambda, miu)
+ans:
+- rho = ƛ / µ, which means each of the smaller queues in tdm have the same utilisation (lambda / 2) / (miu / 2)
+- if we make reservations, some of the resources will be wasted with a certain prob: E[W] = 1/miu, which is now halved. W inc, each service time increases
+
+E[Q] = k times larger for tdm versus statistical multiplexing
+
+## various queueing models
+- multiple servers
+  - M/M/n, where n is number of servers
+- limited queue size (we now assume it is infinite)
+  - M/M/1/K where K is the queue length
+  - K is max number of customer, after which packets will be dropped
+- Different service disciplines
+  - M/M/1/LIFO -- where queue is replaced w a stack
+- general service and inter-arrival times
+  - service times: M/G/1, M/D/1 -- D = degenerated distribution (constant service time, every customer spend the same time)
+  - arrival times: G/M/1
+  - both: G/G/1 -- any distribution for both
+    - but the more general, cannot write results cleanly (no closed form solutions)
+
+
+## burke's theorem
+- if an M/M/1 system with arival rate lambda starts in a steady state
+  - the departure is also poisson with rate lambda (when stable)
+  - inter-departure time is exponential as well
+  - the number of customers in the system is independent of the sequence of departure times prior to time t
+- implication of this theorem: we can confirm that the arrival to the second system will be poisson distribution
+  - means the previous system doesnt matter 
+
+## tandem queues
+- i dint listen
+
+## acyclic network with probabilistic routing
+- different flows might take different paths (after departing from one server)
+- each llink is shared by different flows
+- if P(goes to route i) = alpha. P(goes to route k) = 1 - alpha
+  - and the arrival rates to i and k are still poisson distribution
+
+## jackson network
+- there's a loop back
+
+![](jackson-loop.png)
+
+### solving jackson network
+- discuss in next lecture
+
+
+
+
+  
