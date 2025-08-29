@@ -22,6 +22,8 @@
     - [exponential distribution](#exponential-distribution)
     - [poisson process](#poisson-process)
   - [Service Time](#service-time)
+- [L3](#l3)
+    - [recap](#recap)
 
 # admin
 Richard Ma - Prof
@@ -338,4 +340,34 @@ formally it is L = ƛW where ƛ is r, W is t
   - they mean the same thing here
 - what is the physical meaning of µ in this: *E[S] = 1/µ*
   - Rate of leaving / transmission == packets per unit time LEAVING the queue
+
+# L3
+
+### recap
+- what is a **poisson process**
+  - T (inter-arrival time) follows an exponential distribution
+- what is the **memoryless property**
+  - for arrival time
+    - intuitively: the P(T - s > x | x > s) = P(T > s + x | T > s)
+    - = P(T > x)
+
+  - for service time
+    - memoryless property means that no matter how much time has elapsed we can get the service time needed to complete the service (if the distribution is exponential)
+
+- what is **merging property**
+  - T(merged) = min(T1, T2), T(merged) is exponentially distributed with mean 1/lambda1 + lambda2
+
+- combining merging and memoryless property
+  - the birth-death process, can be modelled as 2 exponential distributions (service time and inter-arrival time) that are merged together
+
+**is M/M/1 a good model**
+- does real internet traffic follow poisson process
+  - nonstationary poisson process (the distribution is still exponential but the rates may differ (peak period))
+  - no for individual traffic flows: depends on application protocol (eg. tcp sliding window sends packet after packet then waits -- nonexponential)
+- does service time dollows exponential
+  - prob no, TCP packets have a max size
+  - maybe yes, for processing time of certain services
+
+- what is the relationship between queueing delay and throughput?
+  - positively correlated? based on the monotonic graph ??
 
